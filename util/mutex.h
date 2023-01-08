@@ -16,6 +16,9 @@
 #if defined(WINVER) && WINVER >= 0x0600
 #define MUTEX_IS_WIN32_SRWLOCK
 #endif
+#if defined(WINVER) && WINVER < 0x0600
+#define MUTEX_IS_WIN32_CSLOCK
+#endif
 #else
 #ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200809L
@@ -28,6 +31,8 @@
 
 #if defined(MUTEX_IS_WIN32_SRWLOCK)
 typedef SRWLOCK MutexType;
+#elif defined(MUTEX_IS_WIN32_CSLOCK)
+typedef CRITICAL_SECTION MutexType;
 #elif defined(MUTEX_IS_PTHREAD_RWLOCK)
 #include <pthread.h>
 #include <stdlib.h>
@@ -72,6 +77,15 @@ void Mutex::Lock()         { AcquireSRWLockExclusive(&mutex_); }
 void Mutex::Unlock()       { ReleaseSRWLockExclusive(&mutex_); }
 void Mutex::ReaderLock()   { AcquireSRWLockShared(&mutex_); }
 void Mutex::ReaderUnlock() { ReleaseSRWLockShared(&mutex_); }
+
+#elif defined(MUTEX_IS_WIN32_CSLOCK)
+
+Mutex::Mutex()             { InitializeCriticalSection(&mutex_); }
+Mutex::~Mutex()            { DeleteCriticalSection(&mutex_); }
+void Mutex::Lock()         { EnterCriticalSection(&mutex_); }
+void Mutex::Unlock()       { LeaveCriticalSection(&mutex_); }
+void Mutex::ReaderLock()   { EnterCriticalSection(&mutex_); }
+void Mutex::ReaderUnlock() { LeaveCriticalSection(&mutex_); }
 
 #elif defined(MUTEX_IS_PTHREAD_RWLOCK)
 

@@ -19,7 +19,7 @@
 
 namespace re2 {
 
-static const bool ExtraDebug = false;
+#define ExtraDebug false
 
 typedef std::set<std::string>::iterator SSIter;
 typedef std::set<std::string>::const_iterator ConstSSIter;

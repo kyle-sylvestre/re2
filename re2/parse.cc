@@ -932,9 +932,9 @@ class FactorAlternationImpl {
 // Rewrites sub to contain simplified list to alternate and returns
 // the new length of sub.  Adjusts reference counts accordingly
 // (incoming sub[i] decremented, outgoing sub[i] incremented).
-int Regexp::FactorAlternation(Regexp** sub, int nsub, ParseFlags flags) {
+int Regexp::FactorAlternation(Regexp** exp_sub, int exp_nsub, ParseFlags flags) {
   std::vector<Frame> stk;
-  stk.emplace_back(sub, nsub);
+  stk.emplace_back(exp_sub, exp_nsub);
 
   for (;;) {
     auto& sub = stk.back().sub;

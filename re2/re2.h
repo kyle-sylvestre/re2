@@ -684,7 +684,7 @@ class RE2 {
     void set_max_mem(int64_t m) { max_mem_ = m; }
 
     Encoding encoding() const { return encoding_; }
-    void set_encoding(Encoding encoding) { encoding_ = encoding; }
+    void set_encoding(Encoding e) { encoding_ = e; }
 
     bool posix_syntax() const { return posix_syntax_; }
     void set_posix_syntax(bool b) { posix_syntax_ = b; }

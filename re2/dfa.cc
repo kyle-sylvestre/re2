@@ -355,9 +355,9 @@ static inline const uint8_t* BytePtr(const void* v) {
 
 // Work queues
 
-// Marks separate thread groups of different priority
+// DFA_Marks separate thread groups of different priority
 // in the work queue when in leftmost-longest matching mode.
-#define Mark (-1)
+#define DFA_Mark (-1)
 
 // Separates the match IDs from the instructions in inst_.
 // Used only for "many match" DFA states.
@@ -517,7 +517,7 @@ std::string DFA::DumpState(State* state) {
   const char* sep = "";
   s += StringPrintf("(%p)", state);
   for (int i = 0; i < state->ninst_; i++) {
-    if (state->inst_[i] == Mark) {
+    if (state->inst_[i] == DFA_Mark) {
       s += "|";
       sep = "";
     } else if (state->inst_[i] == MatchSep) {
@@ -585,7 +585,7 @@ std::string DFA::DumpState(State* state) {
 // ids.  A match by a state in one set would inhibit the running of sets
 // farther down the list but not other instruction ids in the same set.  Each
 // set would correspond to matches beginning at a given point in the string.
-// This is implemented by separating different sets with Mark pointers.
+// This is implemented by separating different sets with DFA_Mark pointers.
 
 // Looks in the State cache for a State matching q, flag.
 // If one is found, returns it.  If one is not found, allocates one,
@@ -603,7 +603,7 @@ DFA::State* DFA::WorkqToCachedState(Workq* q, Workq* mq, uint32_t flag) {
   int n = 0;
   uint32_t needflags = 0;  // flags needed by kInstEmptyWidth instructions
   bool sawmatch = false;   // whether queue contains guaranteed kInstMatch
-  bool sawmark = false;    // whether queue contains a Mark
+  bool sawmark = false;    // whether queue contains a DFA_Mark
   if (ExtraDebug)
     fprintf(stderr, "WorkqToCachedState %s [%#x]", DumpWorkq(q).c_str(), flag);
   for (Workq::iterator it = q->begin(); it != q->end(); ++it) {
@@ -611,9 +611,9 @@ DFA::State* DFA::WorkqToCachedState(Workq* q, Workq* mq, uint32_t flag) {
     if (sawmatch && (kind_ == Prog::kFirstMatch || q->is_mark(id)))
       break;
     if (q->is_mark(id)) {
-      if (n > 0 && inst[n-1] != Mark) {
+      if (n > 0 && inst[n-1] != DFA_Mark) {
         sawmark = true;
-        inst[n++] = Mark;
+        inst[n++] = DFA_Mark;
       }
       continue;
     }
@@ -647,7 +647,7 @@ DFA::State* DFA::WorkqToCachedState(Workq* q, Workq* mq, uint32_t flag) {
     }
   }
   DCHECK_LE(n, q->size());
-  if (n > 0 && inst[n-1] == Mark)
+  if (n > 0 && inst[n-1] == DFA_Mark)
     n--;
 
   // If there are no empty-width instructions waiting to execute,
@@ -681,14 +681,14 @@ DFA::State* DFA::WorkqToCachedState(Workq* q, Workq* mq, uint32_t flag) {
   }
 
   // If we're in longest match mode, the state is a sequence of
-  // unordered state sets separated by Marks.  Sort each set
+  // unordered state sets separated by DFA_Marks.  Sort each set
   // to canonicalize, to reduce the number of distinct sets stored.
   if (kind_ == Prog::kLongestMatch) {
     int* ip = inst.data();
     int* ep = ip + n;
     while (ip < ep) {
       int* markp = ip;
-      while (markp < ep && *markp != Mark)
+      while (markp < ep && *markp != DFA_Mark)
         markp++;
       std::sort(ip, markp);
       if (markp < ep)
@@ -698,7 +698,7 @@ DFA::State* DFA::WorkqToCachedState(Workq* q, Workq* mq, uint32_t flag) {
   }
 
   // If we're in many match mode, canonicalize for similar reasons:
-  // we have an unordered set of states (i.e. we don't have Marks)
+  // we have an unordered set of states (i.e. we don't have DFA_Marks)
   // and sorting will reduce the number of distinct sets stored.
   if (kind_ == Prog::kManyMatch) {
     int* ip = inst.data();
@@ -800,7 +800,7 @@ void DFA::ClearCache() {
 void DFA::StateToWorkq(State* s, Workq* q) {
   q->clear();
   for (int i = 0; i < s->ninst_; i++) {
-    if (s->inst_[i] == Mark) {
+    if (s->inst_[i] == DFA_Mark) {
       q->mark();
     } else if (s->inst_[i] == MatchSep) {
       // Nothing after this is an instruction!
@@ -833,7 +833,7 @@ void DFA::AddToQueue(Workq* q, int id, uint32_t flag) {
     id = stk[--nstk];
 
   Loop:
-    if (id == Mark) {
+    if (id == DFA_Mark) {
       q->mark();
       continue;
     }
@@ -870,12 +870,12 @@ void DFA::AddToQueue(Workq* q, int id, uint32_t flag) {
           stk[nstk++] = id+1;
 
         // If this instruction is the [00-FF]* loop at the beginning of
-        // a leftmost-longest unanchored search, separate with a Mark so
+        // a leftmost-longest unanchored search, separate with a DFA_Mark so
         // that future threads (which will start farther to the right in
         // the input string) are lower priority than current threads.
         if (ip->opcode() == kInstNop && q->maxmark() > 0 &&
             id == prog_->start_unanchored() && id != prog_->start())
-          stk[nstk++] = Mark;
+          stk[nstk++] = DFA_Mark;
         id = ip->out();
         goto Loop;
 
@@ -917,7 +917,7 @@ void DFA::RunWorkqOnEmptyString(Workq* oldq, Workq* newq, uint32_t flag) {
   newq->clear();
   for (Workq::iterator i = oldq->begin(); i != oldq->end(); ++i) {
     if (oldq->is_mark(*i))
-      AddToQueue(newq, Mark, flag);
+      AddToQueue(newq, DFA_Mark, flag);
     else
       AddToQueue(newq, *i, flag);
   }

@@ -42,7 +42,7 @@
 
 namespace re2 {
 
-static const bool ExtraDebug = false;
+#define ExtraDebug false
 
 class NFA {
  public:

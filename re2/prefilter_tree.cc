@@ -21,7 +21,7 @@
 
 namespace re2 {
 
-static const bool ExtraDebug = false;
+#define ExtraDebug false
 
 PrefilterTree::PrefilterTree()
     : compiled_(false),

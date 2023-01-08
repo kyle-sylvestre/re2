@@ -73,7 +73,7 @@
 
 namespace re2 {
 
-static const bool ExtraDebug = false;
+#define ExtraDebug false
 
 // The key insight behind this implementation is that the
 // non-determinism in an NFA for a one-pass regular expression
@@ -437,11 +437,11 @@ bool Prog::IsOnePass() {
     stack[nstack].id = id;
     stack[nstack++].cond = 0;
     while (nstack > 0) {
-      int id = stack[--nstack].id;
+      int stack_id = stack[--nstack].id;
       uint32_t cond = stack[nstack].cond;
 
     Loop:
-      Prog::Inst* ip = inst(id);
+      Prog::Inst* ip = inst(stack_id);
       switch (ip->opcode()) {
         default:
           LOG(DFATAL) << "unhandled opcode: " << ip->opcode();
@@ -452,9 +452,9 @@ bool Prog::IsOnePass() {
           // Should implement it in this engine, but it's subtle.
           DCHECK(!ip->last());
           // If already on work queue, (1) is violated: bail out.
-          if (!AddQ(&workq, id+1))
+          if (!AddQ(&workq, stack_id+1))
             goto fail;
-          id = id+1;
+          stack_id = stack_id+1;
           goto Loop;
 
         case kInstByteRange: {
@@ -518,9 +518,9 @@ bool Prog::IsOnePass() {
           if (ip->last())
             break;
           // If already on work queue, (1) is violated: bail out.
-          if (!AddQ(&workq, id+1))
+          if (!AddQ(&workq, stack_id+1))
             goto fail;
-          id = id+1;
+          stack_id = stack_id+1;
           goto Loop;
         }
 
@@ -529,9 +529,9 @@ bool Prog::IsOnePass() {
         case kInstNop:
           if (!ip->last()) {
             // If already on work queue, (1) is violated: bail out.
-            if (!AddQ(&workq, id+1))
+            if (!AddQ(&workq, stack_id+1))
               goto fail;
-            stack[nstack].id = id+1;
+            stack[nstack].id = stack_id+1;
             stack[nstack++].cond = cond;
           }
 
@@ -553,7 +553,7 @@ bool Prog::IsOnePass() {
                   "Not OnePass: multiple paths %d -> %d", *it, ip->out());
             goto fail;
           }
-          id = ip->out();
+          stack_id = ip->out();
           goto Loop;
 
         case kInstMatch:
@@ -570,9 +570,9 @@ bool Prog::IsOnePass() {
           if (ip->last())
             break;
           // If already on work queue, (1) is violated: bail out.
-          if (!AddQ(&workq, id+1))
+          if (!AddQ(&workq, stack_id+1))
             goto fail;
-          id = id+1;
+          stack_id = stack_id+1;
           goto Loop;
 
         case kInstFail:
