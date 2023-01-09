@@ -171,8 +171,8 @@ int RE2::Options::ParseFlags() const {
 }
 
 void RE2::Init(const StringPiece& pattern, const Options& options) {
-  static std::once_flag empty_once;
-  std::call_once(empty_once, []() {
+  static OnceFlag empty_once;
+  CallOnce(empty_once, []() {
     empty_string = new std::string;
     empty_named_groups = new std::map<std::string, int>;
     empty_group_names = new std::map<int, std::string>;
@@ -250,7 +250,7 @@ void RE2::Init(const StringPiece& pattern, const Options& options) {
 
 // Returns rprog_, computing it if needed.
 re2::Prog* RE2::ReverseProg() const {
-  std::call_once(rprog_once_, [](const RE2* re) {
+  CallOnce(rprog_once_, [](const RE2* re) {
     re->rprog_ =
         re->suffix_regexp_->CompileToReverseProg(re->options_.max_mem() / 3);
     if (re->rprog_ == NULL) {
@@ -358,7 +358,7 @@ int RE2::ReverseProgramFanout(std::vector<int>* histogram) const {
 
 // Returns named_groups_, computing it if needed.
 const std::map<std::string, int>& RE2::NamedCapturingGroups() const {
-  std::call_once(named_groups_once_, [](const RE2* re) {
+  CallOnce(named_groups_once_, [](const RE2* re) {
     if (re->suffix_regexp_ != NULL)
       re->named_groups_ = re->suffix_regexp_->NamedCaptures();
     if (re->named_groups_ == NULL)
@@ -369,7 +369,7 @@ const std::map<std::string, int>& RE2::NamedCapturingGroups() const {
 
 // Returns group_names_, computing it if needed.
 const std::map<int, std::string>& RE2::CapturingGroupNames() const {
-  std::call_once(group_names_once_, [](const RE2* re) {
+  CallOnce(group_names_once_, [](const RE2* re) {
     if (re->suffix_regexp_ != NULL)
       re->group_names_ = re->suffix_regexp_->CaptureNames();
     if (re->group_names_ == NULL)
