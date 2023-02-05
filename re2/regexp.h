@@ -5,6 +5,9 @@
 #ifndef RE2_REGEXP_H_
 #define RE2_REGEXP_H_
 
+#ifdef Text
+#undef Text
+#endif
 // --- SPONSORED LINK --------------------------------------------------
 // If you want to use this library for regular expression matching,
 // you should use re2/re2.h, which provides a class RE2 that
@@ -659,6 +662,8 @@ inline Regexp::ParseFlags operator~(Regexp::ParseFlags a) {
   return static_cast<Regexp::ParseFlags>(
       ~static_cast<int>(a) & static_cast<int>(Regexp::AllParseFlags));
 }
+
+bool IsUnicodeWordClass(Rune c);
 
 }  // namespace re2
 

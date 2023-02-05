@@ -2478,4 +2478,35 @@ Regexp* Regexp::Parse(const StringPiece& s, ParseFlags global_flags,
   return ps.DoFinish();
 }
 
+bool IsUnicodeWordClass(Rune c)
+{
+    bool result = false;
+    if (c <= 128)
+    {
+        // fast pass ascii
+        // \b == assert at word boundary (^\w|\w$|\W\w|\w\W)
+        // \w == [a-zA-Z0-9_])
+        result =  ((c >= 'a' && c <= 'z') ||
+                   (c >= 'A' && c <= 'Z') ||
+                   (c >= '0' && c <= '9') ||
+                   (c == '_'));
+    }
+    else
+    {
+        // \pL == letter in any language
+        // \pN == numeric character in any language
+        static re2::CharClassBuilder ccb;
+        if (ccb.empty())
+        {
+            RegexpStatus status;
+            StringPiece sp = StringPiece("\\pL");
+            ParseUnicodeGroup(&sp, Regexp::ParseFlags::LikePerl, &ccb, &status);
+            sp = StringPiece("\\pN");
+            ParseUnicodeGroup(&sp, Regexp::ParseFlags::LikePerl, &ccb, &status);
+        }
+        result = ccb.Contains(c);
+    }
+    return result;
+}
+
 }  // namespace re2
