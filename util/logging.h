@@ -33,11 +33,11 @@
 #define CHECK_EQ(x, y)	CHECK((x) == (y))
 #define CHECK_NE(x, y)	CHECK((x) != (y))
 
-#define LOG_INFO LogMessage(__FILE__, __LINE__)
-#define LOG_WARNING LogMessage(__FILE__, __LINE__)
-#define LOG_ERROR LogMessage(__FILE__, __LINE__)
-#define LOG_FATAL LogMessageFatal(__FILE__, __LINE__)
-#define LOG_QFATAL LOG_FATAL
+#define LOG_INFO    LogMessage(0, __FILE__, __LINE__)
+#define LOG_WARNING LogMessage(1, __FILE__, __LINE__)
+#define LOG_ERROR   LogMessage(2, __FILE__, __LINE__)
+#define LOG_FATAL   LogMessageFatal(__FILE__, __LINE__)
+#define LOG_QFATAL  LOG_FATAL
 
 // It seems that one of the Windows header files defines ERROR as 0.
 #ifdef _WIN32
@@ -54,17 +54,33 @@
 
 #define VLOG(x) if((x)>0){}else LOG_INFO.stream()
 
+// shim RE2 errors, ex:
+// void RE2_WriteErrorString(const char *file, int line, int level, const char *msg)
+// #define RE2_WRITE_ERROR RE2_WriteErrorString
+
 class LogMessage {
  public:
-  LogMessage(const char* file, int line)
-      : flushed_(false) {
+  LogMessage(int level, const char* file, int line) {
+    flushed_ = false;
+    file_ = file;
+    line_ = line;
+    level_ = level;
+
+#ifndef RE2_WRITE_ERROR
     stream() << file << ":" << line << ": ";
+#endif
   }
   void Flush() {
     stream() << "\n";
     std::string s = str_.str();
     size_t n = s.size();
+
+#ifdef RE2_WRITE_ERROR
+    RE2_WRITE_ERROR(file_, line_, level_, s.c_str());
+#else
     if (fwrite(s.data(), 1, n, stderr) < n) {}  // shut up gcc
+#endif
+
     flushed_ = true;
   }
   ~LogMessage() {
@@ -77,6 +93,9 @@ class LogMessage {
  private:
   bool flushed_;
   std::ostringstream str_;
+  const char *file_;
+  int line_;
+  int level_;
 
   LogMessage(const LogMessage&) = delete;
   LogMessage& operator=(const LogMessage&) = delete;
@@ -92,7 +111,7 @@ class LogMessage {
 class LogMessageFatal : public LogMessage {
  public:
   LogMessageFatal(const char* file, int line)
-      : LogMessage(file, line) {}
+      : LogMessage(3, file, line) {}
   ATTRIBUTE_NORETURN ~LogMessageFatal() {
     Flush();
     abort();
