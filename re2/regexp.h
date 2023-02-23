@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+#pragma warning(push)
+#pragma warning(disable : 4201) // nameless struct warning
+
 #ifndef RE2_REGEXP_H_
 #define RE2_REGEXP_H_
 
@@ -197,8 +200,8 @@ class RegexpStatus {
   RegexpStatus() : code_(kRegexpSuccess), tmp_(NULL) {}
   ~RegexpStatus() { delete tmp_; }
 
-  void set_code(RegexpStatusCode code) { code_ = code; }
-  void set_error_arg(const StringPiece& error_arg) { error_arg_ = error_arg; }
+  void set_code(RegexpStatusCode c) { code_ = c; }
+  void set_error_arg(const StringPiece& s) { error_arg_ = s; }
   void set_tmp(std::string* tmp) { delete tmp_; tmp_ = tmp; }
   RegexpStatusCode code() const { return code_; }
   const StringPiece& error_arg() const { return error_arg_; }
@@ -668,3 +671,5 @@ bool IsUnicodeWordClass(Rune c);
 }  // namespace re2
 
 #endif  // RE2_REGEXP_H_
+
+#pragma warning(pop) // nameless struct warning
