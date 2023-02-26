@@ -211,8 +211,6 @@
 #include <type_traits>
 #include <vector>
 
-#include "util/mutex.h"
-
 #if defined(__APPLE__)
 #include <TargetConditionals.h>
 #endif
@@ -790,9 +788,9 @@ class RE2 {
   // Map from capture indices to names
   mutable const std::map<int, std::string>* group_names_;
 
-  mutable OnceFlag rprog_once_;
-  mutable OnceFlag named_groups_once_;
-  mutable OnceFlag group_names_once_;
+  mutable std::once_flag rprog_once_;
+  mutable std::once_flag named_groups_once_;
+  mutable std::once_flag group_names_once_;
 };
 
 /***** Implementation details *****/
@@ -953,7 +951,7 @@ class LazyRE2 {
 
   // Named accessor/initializer:
   RE2* get() const {
-    CallOnce(once_, &LazyRE2::Init, this);
+    std::call_once(once_, &LazyRE2::Init, this);
     return ptr_;
   }
 
@@ -963,7 +961,7 @@ class LazyRE2 {
   NoArg barrier_against_excess_initializers_;
 
   mutable RE2* ptr_;
-  mutable OnceFlag once_;
+  mutable std::once_flag once_;
 
  private:
   static void Init(const LazyRE2* lazy_re2) {

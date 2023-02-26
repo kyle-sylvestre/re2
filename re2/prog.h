@@ -16,7 +16,6 @@
 #include <vector>
 #include <type_traits>
 
-#include "util/mutex.h"
 #include "util/util.h"
 #include "util/logging.h"
 #include "re2/pod_array.h"
@@ -445,8 +444,8 @@ class Prog {
 
   uint8_t bytemap_[256];    // map from input bytes to byte classes
 
-  mutable OnceFlag dfa_first_once_;
-  mutable OnceFlag dfa_longest_once_;
+  std::once_flag dfa_first_once_;
+  std::once_flag dfa_longest_once_;
 
   Prog(const Prog&) = delete;
   Prog& operator=(const Prog&) = delete;
