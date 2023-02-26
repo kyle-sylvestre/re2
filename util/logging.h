@@ -73,12 +73,11 @@ class LogMessage {
   void Flush() {
     stream() << "\n";
     std::string s = str_.str();
-    size_t n = s.size();
 
 #ifdef RE2_WRITE_ERROR
     RE2_WRITE_ERROR(file_, line_, level_, s.c_str());
 #else
-    if (fwrite(s.data(), 1, n, stderr) < n) {}  // shut up gcc
+    if (fprintf(stderr, "%s", s.c_str()) == 0) {} // shut up gcc
 #endif
 
     flushed_ = true;
