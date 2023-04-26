@@ -79,14 +79,14 @@ struct RefStorage {
   Mutex ref_mutex;
   std::map<Regexp*, int> ref_map;
 };
-alignas(RefStorage) static char ref_storage[sizeof(RefStorage)];
+static RefStorage *p_ref_storage;
 
 static inline Mutex* ref_mutex() {
-  return &reinterpret_cast<RefStorage*>(ref_storage)->ref_mutex;
+  return &p_ref_storage->ref_mutex;
 }
 
 static inline std::map<Regexp*, int>* ref_map() {
-  return &reinterpret_cast<RefStorage*>(ref_storage)->ref_map;
+  return &p_ref_storage->ref_map;
 }
 
 int Regexp::Ref() {
@@ -102,7 +102,8 @@ Regexp* Regexp::Incref() {
   if (ref_ >= kMaxRef-1) {
     static std::once_flag ref_once;
     std::call_once(ref_once, []() {
-      (void) new (ref_storage) RefStorage;
+      alignas(RefStorage) static char ref_storage[sizeof(RefStorage)];
+      p_ref_storage = new (ref_storage) RefStorage;
     });
 
     // Store ref count in overflow map.

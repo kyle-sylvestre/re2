@@ -76,18 +76,18 @@ struct EmptyStorage {
   std::map<std::string, int> empty_named_groups;
   std::map<int, std::string> empty_group_names;
 };
-alignas(EmptyStorage) static char empty_storage[sizeof(EmptyStorage)];
+static EmptyStorage *p_empty_storage;
 
 static inline std::string* empty_string() {
-  return &reinterpret_cast<EmptyStorage*>(empty_storage)->empty_string;
+  return &p_empty_storage->empty_string;
 }
 
 static inline std::map<std::string, int>* empty_named_groups() {
-  return &reinterpret_cast<EmptyStorage*>(empty_storage)->empty_named_groups;
+  return &p_empty_storage->empty_named_groups;
 }
 
 static inline std::map<int, std::string>* empty_group_names() {
-  return &reinterpret_cast<EmptyStorage*>(empty_storage)->empty_group_names;
+  return &p_empty_storage->empty_group_names;
 }
 
 // Converts from Regexp error code to RE2 error code.
@@ -199,7 +199,8 @@ int RE2::Options::ParseFlags() const {
 void RE2::Init(const StringPiece& pattern, const Options& options) {
   static std::once_flag empty_once;
   std::call_once(empty_once, []() {
-    (void) new (empty_storage) EmptyStorage;
+    alignas(EmptyStorage) static char empty_storage[sizeof(EmptyStorage)];
+    p_empty_storage = new (empty_storage) EmptyStorage;
   });
 
   pattern_ = new std::string(pattern);
