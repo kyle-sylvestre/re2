@@ -2495,7 +2495,7 @@ bool IsUnicodeWordClass(Rune c)
     {
         // \pL == letter in any language
         // \pN == numeric character in any language
-        static re2::CharClassBuilder ccb;
+        static thread_local re2::CharClassBuilder ccb;
         if (ccb.empty())
         {
             RegexpStatus status;
